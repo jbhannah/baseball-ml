@@ -44,7 +44,7 @@ class AwardsManagers(Base):
     yearID = Column(Integer, index=True)
     lgID = Column(String, index=True)
     tie = Column(Boolean)
-    notes = Column(None) # TODO Manually specify column type
+    notes = Column(String)
 
 
 class AwardsPlayers(Base):
@@ -176,11 +176,11 @@ class FieldingOFsplit(Base):
     A = Column(Integer)
     E = Column(Integer)
     DP = Column(Integer)
-    PB = Column(None) # TODO Manually specify column type
-    WP = Column(None) # TODO Manually specify column type
-    SB = Column(None) # TODO Manually specify column type
-    CS = Column(None) # TODO Manually specify column type
-    ZR = Column(None) # TODO Manually specify column type
+    PB = Column(Integer)
+    WP = Column(Integer)
+    SB = Column(Integer)
+    CS = Column(Integer)
+    ZR = Column(Integer)
 
 
 class FieldingPost(Base):
@@ -199,8 +199,8 @@ class FieldingPost(Base):
     DP = Column(Integer)
     TP = Column(Integer)
     PB = Column(Integer)
-    SB = Column(None) # TODO Manually specify column type
-    CS = Column(None) # TODO Manually specify column type
+    SB = Column(Integer)
+    CS = Column(Integer)
 
 
 class HallOfFame(Base):

@@ -9,28 +9,24 @@ from invoke import Collection, task
 
 index_pattern = compile(r"^\w+ID$")
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 @task
 def generate(c):
     models = []
-    datadir = Path.resolve(
-        Path.joinpath(Path.cwd(), "baseballdatabank", "core"))
+    outfile = Path.cwd().joinpath("baseball", "db", "models.py").resolve()
 
-    for path in sorted(datadir.glob("*.csv")):
-        model = {"name": path.stem}
+    for name, reader in _data_readers():
+        model = {"name": name}
         logger.info("Generating model {}".format(model["name"]))
+        rows = [row for row in reader]
 
-        with path.open("r") as file:
-            reader = DictReader(file)
-            rows = [row for row in reader]
-
-            model["fields"] = {
-                field: _get_column_type_for_field(field, rows)
-                for field in reader.fieldnames
-            }
+        model["fields"] = {
+            field: _get_column_type_for_field(field, rows)
+            for field in reader.fieldnames
+        }
 
         models.append(model)
 
@@ -44,22 +40,27 @@ def generate(c):
                   ", ".join(sorted(["Column", *import_types])),
                   "\n\n\n".join([_model_to_class(model) for model in models]))
 
-    outfile = Path.resolve(
-        Path.joinpath(Path.cwd(), "baseball", "db", "models.py"))
-
     with outfile.open("w") as file:
         file.write(output)
+
+
+def _data_readers():
+    datadir = Path.cwd().joinpath("baseballdatabank", "core").resolve()
+
+    for path in sorted(datadir.glob("*.csv")):
+        with path.open("r") as file:
+            yield path.stem, DictReader(file)
 
 
 def _get_column_spec_for_field(name: str, column_type: str):
     args = []
 
-    if not _is_valid_variable_name(name):
-        args.append("\"{}\"".format(name))
+    if not name.isidentifier():
         name = sub(r"[^0-9A-Za-z_]", "_", name)
 
-        if not _is_valid_variable_name(name):
-            name = "_{}".format(name)
+    if not _is_valid_variable_name(name):
+        args.append("\"{}\"".format(name))
+        name = "_{}".format(name)
 
     args.append("{}".format(column_type))
 
