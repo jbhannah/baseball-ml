@@ -44,6 +44,45 @@ def generate(c):
         file.write(output)
 
 
+@task
+def reset(c):
+    from baseball.db import engine_path
+
+    logger.info("Resetting database")
+    engine_path.unlink(missing_ok=True)
+
+
+@task(pre=[reset])
+def load(c):
+    from baseball.db import get_engine, models
+    from sqlalchemy import func, select
+
+    engine = get_engine()
+
+    for name, reader in _data_readers():
+        logger.info("Loading {} data".format(name))
+        table = eval("models.{}.__table__".format(name))
+
+        engine.execute(table.insert(), [{
+            column: _cast_value_for_insert(row[column], table.columns[column])
+            for column in row
+        } for row in reader])
+
+        statement = select([func.count()]).select_from(table)
+        count = engine.execute(statement).fetchone()[0]
+        logger.info("Loaded {}, {} rows".format(name, count))
+
+
+def _cast_value_for_insert(value, column):
+    if column.type.__class__.__name__ == "Boolean":
+        return value == "Y"
+
+    if value == "":
+        return None
+
+    return value
+
+
 def _data_readers():
     datadir = Path.cwd().joinpath("baseballdatabank", "core").resolve()
 
@@ -112,3 +151,5 @@ def _model_to_class(model):
 
 models = Collection("models")
 models.add_task(generate)
+models.add_task(load)
+models.add_task(reset)
