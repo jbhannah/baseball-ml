@@ -1,4 +1,6 @@
-from sqlalchemy import Boolean, Column, Integer, Numeric, String
+from sqlalchemy import Boolean, Column, Float, Integer, Numeric, String, func
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.sql import case
 
 from .base import Base
 
@@ -99,6 +101,29 @@ class Batting(Base):
     SH = Column(Integer)
     SF = Column(Integer)
     GIDP = Column(Integer)
+
+    @hybrid_property
+    def PA(self):
+        """
+        Total plate appearances.
+        """
+        return func.coalesce(self.AB, 0) + \
+               func.coalesce(self.BB, 0) + \
+               func.coalesce(self.HBP, 0) + \
+               func.coalesce(self.SH, 0) + \
+               func.coalesce(self.SF, 0)
+
+    @hybrid_property
+    def avg(self):
+        """
+        Batting average as a floating point value. Correctly calculates the
+        average over an aggregate result set.
+        """
+        try:
+            return func.sum(func.coalesce(self.H, 0)) / func.cast(
+                func.sum(func.coalesce(self.AB, 0)), Float)
+        except ZeroDivisionError:
+            return 0.0
 
 
 class BattingPost(Base):

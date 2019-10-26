@@ -14,9 +14,14 @@ class _Engine(metaclass=Singleton):
     def __init__(self, engine_path=DEFAULT_ENGINE_PATH):
         self._engine_path = "sqlite:///{}".format(engine_path)
         self.engine = create_engine(self._engine_path)
+        self.Session = sessionmaker(bind=self.engine)
 
         base.Base.metadata.create_all(self.engine)
 
 
 def get_engine():
     return _Engine().engine
+
+
+def Session():
+    return _Engine().Session()
