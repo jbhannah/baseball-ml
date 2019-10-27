@@ -125,6 +125,20 @@ class Batting(Base):
         except ZeroDivisionError:
             return 0.0
 
+    @hybrid_property
+    def obp(self):
+        """
+        On-base percentage as a floating point value. Correctly calculates the
+        percentage over an aggregate result set.
+        """
+        try:
+            return func.sum(self.H + func.coalesce(self.BB, 0) +
+                            func.coalesce(self.HBP, 0)) / func.cast(
+                                func.sum(self.PA) -
+                                func.sum(func.coalesce(self.SH, 0)), Float)
+        except ZeroDivisionError:
+            return 0.0
+
 
 class BattingPost(Base):
     yearID = Column(Integer, index=True)
